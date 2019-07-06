@@ -202,28 +202,6 @@ class Enemi:
         
 
 
-def aff_jeu(perso,enemis,cam,mape,mis,fps):
-    fenetre.fill((0,0,0))
-    for x in range(int((-cam[0])/tc),int((-cam[0]+tex)/tc+1)):
-        for y in range(int((-cam[1])/tc),int((-cam[1]+tey)/tc+1)):
-            if x>=0 and x < mape.shape[0] and y >= 0 and y < mape.shape[1]:
-                fenetre.blit(emape[mape[x,y]][1],[cam[0]+x*tc,cam[1]+y*tc])
-    for e in enemis:
-        if True or e.px+cam[0]-e.tx > 0 and e.px+cam[0] < tex and e.py+cam[1]-e.ty > 0 and e.py+cam[1] < tey:
-            fenetre.blit(e.img,[cam[0]+e.px,cam[1]+e.py])
-            pygame.draw.rect(fenetre,(150,0,0),(cam[0]+e.px,cam[1]+e.py-15,int(float(e.vie)/float(e.vie_tot)*float(e.tx)),8),0)
-            pygame.draw.rect(fenetre,(0,0,0),(cam[0]+e.px,cam[1]+e.py-15,e.tx,7),1)
-            if debug : pygame.draw.line(fenetre,(250,0,0),(cam[0]+perso.px,cam[1]+perso.py),(cam[0]+e.px,cam[1]+e.py),1)
-    for m in mis:
-        if m.px+cam[0]-m.t > 0 and m.px+cam[0] < tex and m.py+cam[1]-m.t > 0 and m.py+cam[1] < tey:
-            pygame.draw.circle(fenetre,m.cl,(int(cam[0]+m.px),int(cam[1]+m.py)),m.t,0)
-    fenetre.blit(perso.img,[cam[0]+perso.px,cam[1]+perso.py])
-    pygame.draw.rect(fenetre,(250,0,0),(50,50,int(float(perso.vie)/float(perso.vie_tot)*float(200)),25),0)
-    pygame.draw.rect(fenetre,(0,0,0),(50,50,200,25),2)
-    pos=pygame.mouse.get_pos()
-    pygame.draw.line(fenetre,(0,0,100),(cam[0]+perso.px+int(float(perso.tx)/2.),cam[1]+perso.py+int(float(perso.ty)/2.)),(pos[0]+(pos[0]-(cam[0]+perso.px))*10,pos[1]+(pos[1]-(cam[1]+perso.py))*10),1)
-    fenetre.blit(font2.render("fps : "+str(int(fps)),20,(255,255,255)),[15,15])
-    pygame.display.update()
 
 
 def create_mape(niv):
@@ -249,7 +227,7 @@ def create_mape(niv):
         if deb[1]<0: deb[1]=0
         if deb[1]>tmy-1: deb[1]=tmy-1
     mape[deb[0],deb[1]]=ifin
-    perso=Perso()
+    perso=Perso(niv)
     perso.px=dex*tc+tc/2
     perso.py=dey*tc+tc/2
     return mape,perso,[deb[0],deb[1]],mps
@@ -292,10 +270,11 @@ def deb_level(niv):
     gagne=False
     return enemis,mape,perso,cfin,cam,mis,gagne
 
-def ecran_gagne(niv):
+def ecran_gagne(niv,points):
     fenetre.fill((75,90,20))
     fenetre.blit(font.render("Vous avez terminé le niveau "+str(niv),20,(255,255,255)),[250,300])
-    fenetre.blit(font.render("Appuyez sur 'ESPACE' pour continuer",20,(255,255,255)),[250,350])
+    fenetre.blit(font.render("Vous avez "+str(points)+" points",20,(255,255,255)),[250,350])
+    fenetre.blit(font.render("Appuyez sur 'ESPACE' pour continuer",20,(255,255,255)),[250,400])
     pygame.display.update()
     encor=True
     while encor:
@@ -303,29 +282,61 @@ def ecran_gagne(niv):
             if event.type==QUIT: exit()
             elif event.type==KEYDOWN and event.key in [K_SPACE,K_ESCAPE]: encor=False
 
-def ecran_perdu(niv):
+def ecran_perdu(niv,points):
     fenetre.fill((75,90,20))
     fenetre.blit(font.render("Vous êtes mort. Vous étiez au niveau "+str(niv),20,(255,0,0)),[250,300])
-    fenetre.blit(font.render("Appuyez sur 'ESPACE' pour continuer",20,(255,0,0)),[250,350])
+    fenetre.blit(font.render("Vous avez "+str(points)+" points",20,(255,255,255)),[250,350])
+    fenetre.blit(font.render("Appuyez sur 'ESPACE' pour continuer",20,(255,0,0)),[250,400])
     pygame.display.update()
     encor=True
     while encor:
         for event in pygame.event.get():
             if event.type==QUIT: exit()
             elif event.type==KEYDOWN and event.key in [K_SPACE,K_ESCAPE]: encor=False
+
+
+def aff_jeu(perso,enemis,cam,mape,mis,fps,points):
+    fenetre.fill((0,0,0))
+    for x in range(int((-cam[0])/tc),int((-cam[0]+tex)/tc+1)):
+        for y in range(int((-cam[1])/tc),int((-cam[1]+tey)/tc+1)):
+            if x>=0 and x < mape.shape[0] and y >= 0 and y < mape.shape[1]:
+                fenetre.blit(emape[mape[x,y]][1],[cam[0]+x*tc,cam[1]+y*tc])
+    for e in enemis:
+        if True or e.px+cam[0]-e.tx > 0 and e.px+cam[0] < tex and e.py+cam[1]-e.ty > 0 and e.py+cam[1] < tey:
+            fenetre.blit(e.img,[cam[0]+e.px,cam[1]+e.py])
+            pygame.draw.rect(fenetre,(150,0,0),(cam[0]+e.px,cam[1]+e.py-15,int(float(e.vie)/float(e.vie_tot)*float(e.tx)),8),0)
+            pygame.draw.rect(fenetre,(0,0,0),(cam[0]+e.px,cam[1]+e.py-15,e.tx,7),1)
+            if debug : pygame.draw.line(fenetre,(250,0,0),(cam[0]+perso.px,cam[1]+perso.py),(cam[0]+e.px,cam[1]+e.py),1)
+    for m in mis:
+        if m.px+cam[0]-m.t > 0 and m.px+cam[0] < tex and m.py+cam[1]-m.t > 0 and m.py+cam[1] < tey:
+            pygame.draw.circle(fenetre,m.cl,(int(cam[0]+m.px),int(cam[1]+m.py)),m.t,0)
+    fenetre.blit(perso.img,[cam[0]+perso.px,cam[1]+perso.py])
+    pygame.draw.rect(fenetre,(250,0,0),(50,50,int(float(perso.vie)/float(perso.vie_tot)*float(200)),25),0)
+    pygame.draw.rect(fenetre,(0,0,0),(50,50,200,25),2)
+    fenetre.blit(font.render("score : "+str(points),20,(255,255,255)),[tex-200,10])
+    fenetre.blit(font.render("munitions : "+str(perso.nbcharg)+"/"+str(perso.nbmun),20,(255,255,255)),[tex-200,40])
+    if time.time()-perso.dchrg<=perso.tchrg:
+        pygame.draw.rect(fenetre,(0,0,120),(tex-200,70,int((time.time()-perso.dchrg)/perso.tchrg*100),5),0)
+        pygame.draw.rect(fenetre,(0,0,0),(tex-200,70,100,5),1)
+    pos=pygame.mouse.get_pos()
+    pygame.draw.line(fenetre,(0,0,100),(cam[0]+perso.px+int(float(perso.tx)/2.),cam[1]+perso.py+int(float(perso.ty)/2.)),(pos[0]+(pos[0]-(cam[0]+perso.px))*10,pos[1]+(pos[1]-(cam[1]+perso.py))*10),1)
+    fenetre.blit(font2.render("fps : "+str(int(fps)),20,(255,255,255)),[15,15])
+    pygame.display.update()
 
 def main_jeu():
     niv=1
     enemis,mape,perso,cfin,cam,mis,gagne=deb_level(niv)
     encour=True
     fps=0
+    points=0
     while encour:
         t1=time.time()
-        aff_jeu(perso,enemis,cam,mape,mis,fps)
+        aff_jeu(perso,enemis,cam,mape,mis,fps,points)
         cam=perso.update(cam,mape)
         for e in enemis:
             mis=e.update(mape,perso,mis,cam)
             if e.vie<=0:
+                points+=10
                 if e in enemis: del(enemis[enemis.index(e)])
         for m in mis:
             m.update(perso,enemis,mape)
@@ -334,18 +345,19 @@ def main_jeu():
         perso,cam=verif_keys(perso,cam)
         if pygame.Rect(perso.px,perso.py,perso.tx,perso.ty).colliderect(pygame.Rect(cfin[0]*tc,cfin[1]*tc,tc,tc)):
             enemis,mape,perso,cfin,cam,mis,gagne=deb_level(niv)
-            ecran_gagne(niv)
+            points+=100
+            ecran_gagne(niv,points)
             niv+=1
         if perso.vie<=0:
             encour=False
-            ecran_perdu(niv)
+            ecran_perdu(niv,points)
         for event in pygame.event.get():
             if event.type==QUIT: exit()
             elif event.type==KEYDOWN and event.key==K_ESCAPE: encour=False
             elif event.type==MOUSEBUTTONDOWN:
                 if event.button==1:
                     if time.time()-perso.dchrg>=perso.tchrg and time.time()-perso.dat >= perso.tat and perso.nbcharg>0:
-                        perso.nbmun-=1
+                        perso.nbcharg-=1
                         perso.dat=time.time()
                         pos=pygame.mouse.get_pos()
                         vitx=(pos[0]-(cam[0]+perso.px))/1000.*100
