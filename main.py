@@ -123,6 +123,67 @@ class Perso:
             if self.vity > 0: self.vity-=0.5
         return cam
 
+class Enemi:
+    def __init__(self,x,y,tp):
+        etp=enms[tp]
+        self.nom=etp[0]
+        self.px=x
+        self.py=y
+        self.tx=etp[0]
+        self.ty=etp[0]
+        self.img=pygame.transform.scale(pygame.image.load(dim+etp[0]),[self.tx,self.ty])
+        self.vie_tot=etp[0]
+        self.vie=self.vie_tot
+        self.vitx=0.
+        self.vity=0.
+        self.att=etp[0]
+        self.dbg=time.time()
+        self.tbg=0.01
+        self.vitmax=etp[0]
+        self.acc=etp[0]
+        self.distrep=etp[0]
+        self.portee=etp[0]
+    def update(self,mape,pers,mis):
+        if time.time()-self.dbg>=self.tbg:
+            self.dbg=time.time()
+            dist=math.sqrt((self.px-perso.px)**2+(self.py-perso.py)**2)
+            if dist <= self.distrep:
+                if self.px < perso.px: self.vitx-=self.acc
+                if self.px > perso.px: self.vitx+=self.acc
+                if self.py < perso.py: self.vity-=self.acc
+                if self.py > perso.py: self.vity+=self.acc
+                if dist <= self.portee:
+                    if self.att[0]==0: pass
+                    else: pass
+            else:
+                self.vitx+=random.choice([-self.acc,self.acc])
+                self.vity+=random.choice([-self.acc,self.acc])
+            if self.vitx < -self.vitmax: self.vitx=-self.vitmax
+            if self.vitx > self.vitmax: self.vitx=self.vitmax
+            if self.vity < -self.vitmax: self.vity=-self.vitmax
+            if self.vity > self.vitmax: self.vity=self.vitmax
+            self.px+=self.vitx
+            self.py+=self.vity
+            srect=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty)
+            for x in range(int((self.px)/tc-1),int((self.px)/tc+2)):
+                for y in range(int((self.py)/tc-1),int((self.py)/tc+2)):
+                    if x>=0 and y>=0 and x < mape.shape[0] and y < mape.shape[1] and not emape[mape[x,y]][2]: 
+                        mrect=pygameRect(cam[0]+x*tc,cam[1]+y*tc,tc,tc)
+                        if srect.colliderect(mrect):
+                            self.px-=self.vitx
+                            self.py-=self.vity
+                            self.vitx,self.vity=0,0
+            if self.px<0: self.px=1
+            if self.py<0: self.py=1
+            if self.px+self.tx>mape.shape[0]*tc: self.px=mape.shape[0]*tc-self.tx-1
+            if self.py+self.ty>mape.shape[1]*tc: self.py=mape.shape[1]*tc-self.ty-1
+            if self.vitx<0: self.vitx+=0.1
+            if self.vitx>0: self.vitx-=0.1
+            if self.vity<0: self.vity+=0.1
+            if self.vity>0: self.vity-=0.1
+        return mis
+        
+
 
 def aff_jeu(perso,enemis,cam,mape,mis,fps):
     fenetre.fill((0,0,0))
