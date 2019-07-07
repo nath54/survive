@@ -183,24 +183,28 @@ class Perso:
             self.py+=self.vity
             bc=True
             srect=pygame.draw.rect(fenetre,(50,50,0),(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty),2)
+            srhaut=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty*15/100)
+            srbas=pygame.Rect(cam[0]+self.px,cam[1]+self.py+self.ty*75/100,self.tx,self.ty*15/100)
+            srgauche=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx*15/100,self.ty)
+            srdroit=pygame.Rect(cam[0]+self.px*75/100,cam[1]+self.py,self.tx*15/100,self.ty)
             for x in range(int((self.px)/tc-1),int((self.px)/tc+2)):
                 for y in range(int((self.py)/tc-1),int((self.py)/tc+2)):
                     if x>=0 and y>=0 and x < mape.shape[0] and y < mape.shape[1] and not emape[mape[x,y]][2]: 
                         mrect=pygame.draw.rect(fenetre,(0,0,0),(cam[0]+x*tc,cam[1]+y*tc,tc,tc),2)
                         if srect.colliderect(mrect):
-                            bc=True
-                            self.px-=self.vitx
-                            self.py-=self.vity
+                            if srhaut.colliderect(mrect): self.py-=self.vity-1
+                            elif srbas.colliderect(mrect): self.py+=self.vity+1
+                            if srgauche.colliderect(mrect): self.px-=self.vitx-1
+                            elif srdroit.colliderect(mrect): self.px+=self.vitx+1
+                            else:
+                                self.px-=self.vitx
+                                self.py-=self.vity
                             #self.vitx,self.vity=0,0
-                            bc=False
             if debug: pygame.display.update()
             if self.px<0: self.px,self.vitx,self.vity=1,0,0
             if self.px+self.tx>mape.shape[0]*tc: self.px,self.vitx,self.vity=mape.shape[0]*tc-self.tx-1,0,0
             if self.py<0: self.py,self.vitx,self.vity=1,0,0
             if self.py+self.ty>mape.shape[1]*tc: self.py,self.vitx,self.vity=mape.shape[1]*tc-self.ty-1,0,0
-            if bc:
-                cam[0]-=self.vitx
-                cam[1]-=self.vity
             if self.vitx < 0: self.vitx+=0.5
             if self.vitx > 0: self.vitx-=0.5
             if self.vity < 0: self.vity+=0.5
