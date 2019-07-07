@@ -67,7 +67,7 @@ for em in emape:
 emaps=[ [0,2],[1,2],[4,2],[5,2],[6,2] ]
 fins=[3]
 
-def dist(p1,p2): return int(math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[0])**2))
+def dist(p1,p2): return int(math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2))
 
 class Missil:
     def __init__(self,x,y,t,cl,dg,vitx,vity,pos,texpl,clexpl):
@@ -193,9 +193,9 @@ class Perso:
                         mrect=pygame.draw.rect(fenetre,(0,0,0),(cam[0]+x*tc,cam[1]+y*tc,tc,tc),2)
                         if srect.colliderect(mrect):
                             if srhaut.colliderect(mrect): self.py-=self.vity-1
-                            elif srbas.colliderect(mrect): self.py+=self.vity+1
+                            elif srbas.colliderect(mrect): self.py+=self.vity-1
                             if srgauche.colliderect(mrect): self.px-=self.vitx-1
-                            elif srdroit.colliderect(mrect): self.px+=self.vitx+1
+                            elif srdroit.colliderect(mrect): self.px+=self.vitx-1
                             else:
                                 self.px-=self.vitx
                                 self.py-=self.vity
@@ -245,6 +245,11 @@ class Enemi:
     def update(self,mape,perso,mis,cam):
         if time.time()-self.dbg>=self.tbg:
             self.dbg=time.time()
+            srect=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty)
+            srhaut=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty*15/100)
+            srbas=pygame.Rect(cam[0]+self.px,cam[1]+self.py+self.ty*75/100,self.tx,self.ty*15/100)
+            srgauche=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx*15/100,self.ty)
+            srdroit=pygame.Rect(cam[0]+self.px*75/100,cam[1]+self.py,self.tx*15/100,self.ty)
             dis=dist([cam[0]+perso.px+perso.tx/2,cam[1]+perso.py+perso.ty/2],[cam[0]+self.px+self.tx/2,cam[1]+self.py+self.ty/2])
             if dis <= self.distrep:
                 if perso.px < self.px: self.vitx-=self.acc
@@ -272,7 +277,7 @@ class Enemi:
                     alpha=-math.degrees( math.atan(opp/adj) )+180
                 self.agl=alpha
                 self.img=pygame.transform.rotate(self.img_base,self.agl)
-                if dis <= self.portee:
+                if dis <= self.portee or srect.colliderect(pygame.Rect(cam[0]+perso.px,cam[1]+perso.py,perso.tx,perso.ty)):
                     if self.att[0]==0:
                         if time.time()-self.dat >= self.tat:
                             self.dat=time.time()
@@ -287,20 +292,15 @@ class Enemi:
             if self.vity > self.vitmax: self.vity=self.vitmax
             self.px+=self.vitx
             self.py+=self.vity
-            srect=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty)
-            srhaut=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty*15/100)
-            srbas=pygame.Rect(cam[0]+self.px,cam[1]+self.py+self.ty*75/100,self.tx,self.ty*15/100)
-            srgauche=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx*15/100,self.ty)
-            srdroit=pygame.Rect(cam[0]+self.px*75/100,cam[1]+self.py,self.tx*15/100,self.ty)
             for x in range(int((self.px)/tc-1),int((self.px)/tc+2)):
                 for y in range(int((self.py)/tc-1),int((self.py)/tc+2)):
                     if x>=0 and y>=0 and x < mape.shape[0] and y < mape.shape[1] and not emape[mape[x,y]][2]: 
                         mrect=pygame.Rect(cam[0]+x*tc,cam[1]+y*tc,tc,tc)
                         if srect.colliderect(mrect):
                             if srhaut.colliderect(mrect): self.py-=self.vity-1
-                            elif srbas.colliderect(mrect): self.py+=self.vity+1
+                            elif srbas.colliderect(mrect): self.py+=self.vity-1
                             if srgauche.colliderect(mrect): self.px-=self.vitx-1
-                            elif srdroit.colliderect(mrect): self.px+=self.vitx+1
+                            elif srdroit.colliderect(mrect): self.px+=self.vitx-1
                             else:
                                 self.px-=self.vitx
                                 self.py-=self.vity
