@@ -1,5 +1,5 @@
 #coding:utf-8
-import random,pygame,math,numpy,time
+import random,pygame,math,numpy,time,sys
 from pygame.locals import *
 
 pygame.init()
@@ -9,6 +9,30 @@ pygame.display.set_caption("MAD")
 font=pygame.font.SysFont("Arial",25)
 font2=pygame.font.SysFont("Arial",17)
 
+strings=(
+    "                ",
+    "       X        ",
+    "      X.X       ",
+    "     X . X      ",
+    "    X  .  X     ",
+    "   X   X   X    ",
+    "  X   X.X   X   ",
+    " X   X . X   X  ",
+    "X...X..X..X...X ",
+    " X   X . X   X  ",
+    "  X   X.X   X   ",
+    "   X   X   X    ",
+    "    X  .  X     ",
+    "     X . X      ",
+    "      X.X       ",
+    "       X        ")
+
+cursor,mask=pygame.cursors.compile(strings, black='X', white='.', xor='o')
+cursor_sizer=((16,16),(8,8),cursor,mask)
+
+pygame.mouse.set_cursor(*cursor_sizer)
+
+
 dim="images/"
 
 tc=100
@@ -16,12 +40,11 @@ tc=100
 debug=False
 
 armes=[]
-armes.append( ["pistolet",10,0.5,2.1,1.5,50,3,(20,20,20),3,(250,0,0)] )
-armes.append( ["mitraillette",2,0.01,2.5,100,500,1,(20,20,20),1,(255,0,0)] )
-armes.append( ["grenade",100,5,1,1,25,6,(50,50,50),100,(200,200,0)] )
+armes.append( ["pistolet",10,0.5,2.1,6,50,3,(20,20,20),3,(250,0,0),"perso1.png",52,38] )
+armes.append( ["mitraillette",2,0.01,2.5,100,500,1,(20,20,20),1,(255,0,0),"perso.png",50,29] )
 #0=nom 1=degats 2=vitesse attaque 3=vitesse rechargement 4=taille chargeur 5=nombre munition niv 1 6=taille missile 7=couleur missile
-#8=taille explosion 9=couleur explosion
-
+#8=taille explosion 9=couleur explosion 10=image 11=tx 12=ty
+ 
 enms=[["zombie",50,50,50,[0,50],3,1.,750,60,"en1.png",1]]
 #0=nom 1=vie 2=tx 3=ty 4=att 5=vit max 6=acc 7=dist reperage 8=portee 9=img
 
@@ -41,8 +64,10 @@ for em in emape:
     em[1]=pygame.transform.scale(pygame.image.load(dim+em[1]),[tc,tc])
 #0=nom , 1=img , 2=pmd , 3=mpad
 
-emaps=[ [0,2],[0,7],[1,2],[1,7],[4,2],[4,7],[5,2],[5,7],[6,2],[6,7],[5,8],[5,9] ]
+emaps=[ [0,2],[1,2],[4,2],[5,2],[6,2] ]
 fins=[3]
+
+def dist(p1,p2): return int(math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[0])**2))
 
 class Missil:
     def __init__(self,x,y,t,cl,dg,vitx,vity,pos,texpl,clexpl):
@@ -56,7 +81,7 @@ class Missil:
         self.pos=pos
         self.delet=False
         self.dbg=time.time()
-        self.tbg=0.01
+        self.tbg=0.0001
         self.texpl=texpl
         self.clexpl=clexpl
     def update(self,perso,enemis,mape,cam):
@@ -102,11 +127,11 @@ class Perso:
         arme=armes[arm]
         self.px=500
         self.py=400
-        self.tx=50
-        self.ty=29
+        self.tx=arme[11]
+        self.ty=arme[12]
         self.vie_tot=1000
         self.vie=self.vie_tot
-        self.img_base=pygame.transform.scale(pygame.image.load(dim+"perso.png"),[self.tx,self.ty])
+        self.img_base=pygame.transform.scale(pygame.image.load(dim+arme[10]),[self.tx,self.ty])
         self.img=pygame.transform.scale(pygame.image.load(dim+"perso.png"),[self.tx,self.ty])
         self.agl=0
         self.vit_max=5.5
@@ -132,15 +157,26 @@ class Perso:
     def update(self,cam,mape,mis):  
         if time.time()-self.dbg>=self.tbg:
             pos=pygame.mouse.get_pos()
-            opp=cam[0]+self.px-pos[0]
-            adj=cam[1]+self.py-pos[1]
-            hyp=math.sqrt((self.px-pos[0])**2+(self.py-pos[1])**2)
-            if hyp!=0:
-                self.agl1=math.acos(adj/hyp)
-                self.agl2=math.asin(opp/hyp)
-            if adj!=0:
-                self.agl3=math.tan(opp/adj)
-            self.agl=math.degrees(self.agl3)
+            x1,y1=cam[0]+self.px,cam[1]+self.py
+            x2,y2=pos[0],pos[1]
+            alpha=0
+            if x2 >= x1 and y2 < y1:
+                adj=y2-y1
+                opp=x2-x1
+                alpha=math.degrees( math.atan(opp/adj) )+90
+            elif x2 > x1 and y2 >= y1:
+                adj=x1-x2
+                opp=y1-y2
+                alpha=-math.degrees( math.atan(opp/adj) )+360
+            elif x2 < x1 and y2 >= y1:
+                adj=x1-x2
+                opp=y2-y1
+                alpha=math.degrees( math.atan(opp/adj) )+180
+            elif x2 < x1 and y2 <= y1:
+                adj=x1-x2
+                opp=y1-y2
+                alpha=-math.degrees( math.atan(opp/adj) )+180
+            self.agl=alpha
             self.img=pygame.transform.rotate(self.img_base,self.agl)
             self.dbg=time.time()
             self.px+=self.vitx
@@ -187,6 +223,7 @@ class Enemi:
         self.py=y
         self.tx=etp[2]
         self.ty=etp[3]
+        self.img_base=pygame.transform.scale(pygame.image.load(dim+etp[9]),[self.tx,self.ty])
         self.img=pygame.transform.scale(pygame.image.load(dim+etp[9]),[self.tx,self.ty])
         self.vie_tot=etp[1]
         self.vie=self.vie_tot
@@ -204,13 +241,34 @@ class Enemi:
     def update(self,mape,perso,mis,cam):
         if time.time()-self.dbg>=self.tbg:
             self.dbg=time.time()
-            dist=math.sqrt((self.px-perso.px)**2+(self.py-perso.py)**2)
-            if dist <= self.distrep:
-                if self.px+self.tx/2 < perso.px+perso.tx: self.vitx+=self.acc
-                if self.px+self.tx/2 > perso.px+perso.tx: self.vitx-=self.acc
-                if self.py+self.ty/2 < perso.py+perso.ty: self.vity+=self.acc
-                if self.py+self.ty/2 > perso.py+perso.ty: self.vity-=self.acc
-                if dist <= self.portee:
+            dis=dist([cam[0]+perso.px+perso.tx/2,cam[1]+perso.py+perso.ty/2],[cam[0]+self.px+self.tx/2,cam[1]+self.py+self.ty/2])
+            if dis <= self.distrep:
+                if perso.px < self.px: self.vitx-=self.acc
+                if perso.px > self.px: self.vitx+=self.acc
+                if perso.py < self.py: self.vity-=self.acc
+                if perso.py > self.py: self.vity+=self.acc
+                x1,y1=cam[0]+self.px,cam[1]+self.py
+                x2,y2=cam[0]+perso.px,cam[1]+perso.py
+                alpha=0
+                if x2 >= x1 and y2 < y1:
+                    adj=y2-y1
+                    opp=x2-x1
+                    alpha=math.degrees( math.atan(opp/adj) )+90
+                elif x2 > x1 and y2 >= y1:
+                    adj=x1-x2
+                    opp=y1-y2
+                    alpha=-math.degrees( math.atan(opp/adj) )+360
+                elif x2 < x1 and y2 >= y1:
+                    adj=x1-x2
+                    opp=y2-y1
+                    alpha=math.degrees( math.atan(opp/adj) )+180
+                elif x2 < x1 and y2 <= y1:
+                    adj=x1-x2
+                    opp=y1-y2
+                    alpha=-math.degrees( math.atan(opp/adj) )+180
+                self.agl=alpha
+                self.img=pygame.transform.rotate(self.img_base,self.agl)
+                if dis <= self.portee:
                     if self.att[0]==0:
                         if time.time()-self.dat >= self.tat:
                             self.dat=time.time()
@@ -226,13 +284,22 @@ class Enemi:
             self.px+=self.vitx
             self.py+=self.vity
             srect=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty)
+            srhaut=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty*15/100)
+            srbas=pygame.Rect(cam[0]+self.px,cam[1]+self.py+self.ty*75/100,self.tx,self.ty*15/100)
+            srgauche=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx*15/100,self.ty)
+            srdroit=pygame.Rect(cam[0]+self.px*75/100,cam[1]+self.py,self.tx*15/100,self.ty)
             for x in range(int((self.px)/tc-1),int((self.px)/tc+2)):
                 for y in range(int((self.py)/tc-1),int((self.py)/tc+2)):
                     if x>=0 and y>=0 and x < mape.shape[0] and y < mape.shape[1] and not emape[mape[x,y]][2]: 
                         mrect=pygame.Rect(cam[0]+x*tc,cam[1]+y*tc,tc,tc)
                         if srect.colliderect(mrect):
-                            self.px-=self.vitx
-                            self.py-=self.vity
+                            if srhaut.colliderect(mrect): self.py-=self.vity-1
+                            elif srbas.colliderect(mrect): self.py+=self.vity+1
+                            if srgauche.colliderect(mrect): self.px-=self.vitx-1
+                            elif srdroit.colliderect(mrect): self.px+=self.vitx+1
+                            else:
+                                self.px-=self.vitx
+                                self.py-=self.vity
                             #self.vitx,self.vity=0,0
             if self.px<0: self.px=1
             if self.py<0: self.py=1
@@ -242,17 +309,17 @@ class Enemi:
             if self.vitx>0: self.vitx-=0.1
             if self.vity<0: self.vity+=0.1
             if self.vity>0: self.vity-=0.1
-            if self.vitx<0 and self.vitx > -0.85: self.vitx=0
-            if self.vitx>0 and self.vitx < 0.85: self.vitx=0
-            if self.vity<0 and self.vity > -0.85: self.vity=0
-            if self.vity>0 and self.vity < 0.85: self.vity=0
+            if self.vitx<0 and self.vitx > -2: self.vitx=0
+            if self.vitx>0 and self.vitx < 2: self.vitx=0
+            if self.vity<0 and self.vity > -2: self.vity=0
+            if self.vity>0 and self.vity < 2: self.vity=0
         return mis
         
 
 
 
 
-def create_mape(niv):
+def create_mape(niv,arm):
     mps=[]
     tmx,tmy=random.randint(50*niv,100*niv),random.randint(50*niv,100*niv)
     im=random.choice(emaps)
@@ -276,14 +343,14 @@ def create_mape(niv):
         if deb[1]<0: deb[1]=0
         if deb[1]>tmy-1: deb[1]=tmy-1
     mape[deb[0],deb[1]]=ifin
-    perso=Perso(niv,2)
+    perso=Perso(niv,arm)
     perso.px=dex*tc+tc/2
     perso.py=dey*tc+tc/2
     return mape,perso,[deb[0],deb[1]],mps
         
-def deb_level(niv):
+def deb_level(niv,arm):
     enemis=[]
-    mape,perso,cfin,mps=create_mape(niv)
+    mape,perso,cfin,mps=create_mape(niv,arm)
     cam=[-perso.px+tex/2,-perso.py+tey/2]
     mis=[]
     nbenms=random.randint(2*niv,5*niv)
@@ -376,9 +443,9 @@ def verif_keys(perso,cam):
     if keys[K_KP6]: cam[0]+=30
     return perso,cam
     
-def main_jeu():
+def main_jeu(arm):
     niv=1
-    enemis,mape,perso,cfin,cam,mis,gagne=deb_level(niv)
+    enemis,mape,perso,cfin,cam,mis,gagne=deb_level(niv,arm)
     encour=True
     fps=0
     points=0
@@ -396,8 +463,9 @@ def main_jeu():
                 points+=10
                 if e in enemis: del(enemis[enemis.index(e)])
         perso,cam=verif_keys(perso,cam)
+        cam=[-perso.px+tex/2,-perso.py+tey/2]
         if pygame.Rect(perso.px,perso.py,perso.tx,perso.ty).colliderect(pygame.Rect(cfin[0]*tc,cfin[1]*tc,tc,tc)):
-            enemis,mape,perso,cfin,cam,mis,gagne=deb_level(niv)
+            enemis,mape,perso,cfin,cam,mis,gagne=deb_level(niv,arm)
             points+=100
             ecran_gagne(niv,points)
             niv+=1
@@ -410,9 +478,10 @@ def main_jeu():
             elif event.type==MOUSEBUTTONDOWN:
                 if event.button==1: perso.istirer=True
                 elif event.button==3:
-                    if perso.nbmun>0:
+                    if time.time()-perso.dchrg >= perso.tchrg and perso.nbmun>0:
                         if perso.nbmun<perso.taillechargeur:
                             perso.nbcharg=perso.nbmun
+                            perso.nbmun=0
                         else:
                             perso.nbcharg=perso.taillechargeur
                             perso.nbmun-=perso.taillechargeur
@@ -423,8 +492,101 @@ def main_jeu():
         tt=(t2-t1)
         if tt!=0: fps=1.0/tt
                         
+###########################################################################################
 
-main_jeu()
+imb1=pygame.image.load(dim+"button1.png")
+imb2=pygame.image.load(dim+"button2.png")
+imb3=pygame.image.load(dim+"button3.png")
+
+def aff_menu(men,btsel,arm):
+    fenetre.fill((0,0,0))
+    bst=[]
+    for x in range(20): bst.append(None)
+    #button 1
+    if men==0: ib=imb3
+    elif btsel==0: ib=imb2
+    else: ib=imb1
+    fenetre.blit( ib , [50,50] )
+    fenetre.blit( font.render("jouer",20,(100,150,35)) , [80,70] )
+    #button 2
+    if men==1: ib=imb3
+    elif btsel==1: ib=imb2
+    else: ib=imb1
+    fenetre.blit( ib , [50,200] )
+    fenetre.blit( font.render("personnage",20,(100,150,35)) , [80,220] )
+    #button 3
+    if men==2: ib=imb3
+    elif btsel==2: ib=imb2
+    else: ib=imb1
+    fenetre.blit( ib , [50,350] )
+    fenetre.blit( font.render("stats",20,(100,150,35)) , [80,370] )
+    #button 4
+    if men==3: ib=imb3
+    elif btsel==3: ib=imb2
+    else: ib=imb1
+    fenetre.blit( ib , [50,500] )
+    fenetre.blit( font.render("parametres",20,(100,150,35)) , [80,520] )
+    #button 5
+    if men==4: ib=imb3
+    elif btsel==4: ib=imb2
+    else: ib=imb1
+    fenetre.blit( ib , [50,650] )
+    fenetre.blit( font.render("quitter",20,(100,150,35)) , [80,670] )
+    if men==1:
+        if arm==0: ib=imb3
+        else: ib=imb1
+        bst[0]=fenetre.blit( ib , [740,10] )
+        fenetre.blit( font.render("pistolet",20,(100,150,35)) , [770,30] )
+        if arm==1: ib=imb3
+        else: ib=imb1
+        bst[1]=fenetre.blit( ib , [740,120] )
+        fenetre.blit( font.render("mitraillette",20,(100,150,35)) , [770,140] )
+        fenetre.blit( pygame.image.load(dim+armes[arm][10]) , [400,400] )
+    pygame.display.update()
+    return bst
+
+def main_menu():
+    btsel=0
+    men=None
+    bts=[pygame.Rect(50,50,200,100),pygame.Rect(50,200,200,100),pygame.Rect(50,350,200,100),pygame.Rect(50,500,200,100),pygame.Rect(50,650,200,100)]
+    #0=jouer 1=personnage 2=stats 3=parametres 4=credits 5=quitter
+    arm=0
+    encoure=True
+    while encoure:
+        pos=pygame.mouse.get_pos()
+        btsel=None
+        for b in bts:
+            if b.collidepoint(pos): btsel=bts.index(b)
+        bst=aff_menu(men,btsel,arm)
+        for event in pygame.event.get():
+            if event.type==QUIT: exit()
+            elif event.type==KEYDOWN:
+                if event.key==K_ESCAPE: encoure=False
+            elif event.type==MOUSEBUTTONUP:
+                for b in bts:
+                    if b.collidepoint(pos): men=bts.index(b)
+                if men==0:
+                    try:
+                        main_jeu(arm)
+                    except Exception as error:
+                        print("error : ",error)
+                for bb in bst:
+                    if bb!=None and bb.collidepoint(pos):
+                        i=bst.index(bb)
+                        if i==0: arm=0
+                        elif i==1: arm=1
+                
+                
+
+
+
+
+
+
+
+
+main_menu()
+
 
 
 
