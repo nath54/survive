@@ -10,7 +10,7 @@ tex,tey=io.current_w,io.current_h
 fenetre=pygame.display.set_mode([tex,tey],pygame.FULLSCREEN|pygame.HWSURFACE|pygame.DOUBLEBUF)
 iconimage=pygame.image.load(dim+"icon.png")
 pygame.display.set_icon(iconimage)
-pygame.display.set_caption("Pas Encore De Nom")
+pygame.display.set_caption("Survive")
 
 def rx(x): return int(x/btex*tex)
 def ry(y): return int(y/btey*tey)
@@ -48,9 +48,9 @@ tc=rx(100)
 debug=False
 
 armes=[]
-armes.append( ["pistolet",10,0.5,2.1,6,50,3,(20,20,20),3,(250,0,0),"perso1.png",rx(38),ry(52),0,0] )
+armes.append( ["pistolet",10,0.5,2.1,10,60,3,(20,20,20),3,(250,0,0),"perso1.png",rx(38),ry(52),0,0] )
 armes.append( ["mitraillette",2,0.01,2.5,100,500,1,(20,20,20),1,(255,0,0),"perso.png",rx(29),ry(50),0,0] )
-armes.append( ["couteau",40,0.8,0,0,0,0,0,0,0,"perso3.png",rx(42),ry(59),1,60] )
+armes.append( ["couteau",40,0.4,0,0,0,0,0,0,0,"perso3.png",rx(42),ry(59),1,90] )
 #0=nom 1=degats 2=vitesse attaque 3=vitesse rechargement 4=taille chargeur 5=nombre munition niv 1 6=taille missile 7=couleur missile
 #8=taille explosion 9=couleur explosion 10=image 11=tx 12=ty 13=type arme(0=distance 1=melee) 14=portee ( si type == 1 ) , sinon mettre 0
  
@@ -240,9 +240,9 @@ class Perso:
             if self.vity > 0: self.vity-=0.5
         if self.istirer:
             if time.time()-self.dat >= self.tat:
+                self.dat=time.time()
                 if self.tparme==0 and time.time()-self.dchrg>=self.tchrg and self.nbcharg>0:
                     self.nbcharg-=1
-                    self.dat=time.time()
                     pos=pygame.mouse.get_pos()
                     vitx,vity=50,0
                     if self.agl <= 90 and self.agl > 0:
@@ -419,15 +419,15 @@ def deb_level(niv,arm):
     gagne=False
     trs=[]
     for x in range(3):
-        mm=random.choice( mps[int(len(mps)*10/100):] )
+        mm=random.choice( mps[int(len(mps)*10/100):-1] )
         trs.append( Tresor(mm[0]*tc+rx(20),mm[1]*tc+ry(20)) )
     return enemis,mape,perso,cfin,cam,mis,gagne,trs
 
 def ecran_gagne(niv,points):
     fenetre.fill((75,90,20))
-    fenetre.blit(font.render("Vous avez terminé le niveau "+str(niv),20,(255,255,255)),[250,300])
-    fenetre.blit(font.render("Vous avez "+str(points)+" points",20,(255,255,255)),[250,350])
-    fenetre.blit(font.render("Appuyez sur 'ESPACE' pour continuer",20,(255,255,255)),[250,400])
+    fenetre.blit(font.render("Vous avez terminé le niveau "+str(niv),20,(255,255,255)),[rx(250),ry(300)])
+    fenetre.blit(font.render("Vous avez "+str(points)+" points",20,(255,255,255)),[rx(250),ry(350)])
+    fenetre.blit(font.render("Appuyez sur 'ESPACE' pour continuer",20,(255,255,255)),[rx(250),ry(400)])
     pygame.display.update()
     encor=True
     while encor:
@@ -447,6 +447,10 @@ def ecran_perdu(niv,points):
             if event.type==QUIT: exit()
             elif event.type==KEYDOWN and event.key in [K_SPACE,K_ESCAPE]: encor=False
 
+def ecran_chargement():
+    fenetre.fill((75,90,20))
+    fenetre.blit(font.render("Chargement...",20,(255,255,255)),[rx(500),ry(400)])
+    pygame.display.update()
 
 def aff_jeu(perso,enemis,cam,mape,mis,fps,points,trs):
     fenetre.fill((0,0,0))
@@ -477,11 +481,11 @@ def aff_jeu(perso,enemis,cam,mape,mis,fps,points,trs):
     fenetre.blit(font2.render("score : "+str(points),20,(255,255,255)),[tex-rx(200),ry(10)])
     fenetre.blit(font2.render("munitions : "+str(perso.nbcharg)+"/"+str(perso.nbmun),20,(255,255,255)),[tex-rx(200),ry(40)])
     if time.time()-perso.dchrg<=perso.tchrg:
-        pygame.draw.rect(fenetre,(0,0,120),(tex-200,65,int((time.time()-perso.dchrg)/perso.tchrg*100),5),0)
-        pygame.draw.rect(fenetre,(0,0,0),(tex-200,65,100,5),1)
+        pygame.draw.rect(fenetre,(0,0,120),(tex-rx(200),ry(65),int((time.time()-perso.dchrg)/perso.tchrg*rx(100)),ry(5)),0)
+        pygame.draw.rect(fenetre,(0,0,0),(tex-rx(200),ry(65),rx(100),ry(5)),1)
     if time.time()-perso.dat<=perso.tat:
-        pygame.draw.rect(fenetre,(200,0,0),(tex-200,75,int((time.time()-perso.dat)/perso.tat*100),5),0)
-        pygame.draw.rect(fenetre,(0,0,0),(tex-200,75,100,5),1)
+        pygame.draw.rect(fenetre,(200,0,0),(tex-rx(200),ry(75),int((time.time()-perso.dat)/perso.tat*rx(100)),ry(5)),0)
+        pygame.draw.rect(fenetre,(0,0,0),(tex-rx(200),ry(75),rx(100),ry(5)),1)
     if perso.nbcharg==0 and perso.nbmun>0: fenetre.blit( font.render("click droit pour recharger",20,(255,50,50)),[tex/2,50])
     fenetre.blit(font2.render("nb enemis restants: "+str(len(enemis)),20,(255,255,255)),[tex-rx(200),ry(80)])
     pos=pygame.mouse.get_pos()
@@ -510,6 +514,7 @@ def verif_keys(perso,cam):
     return perso,cam
     
 def main_jeu(arm):
+    ecran_chargement()
     niv=1
     enemis,mape,perso,cfin,cam,mis,gagne,trs=deb_level(niv,arm)
     encour=True
@@ -531,13 +536,15 @@ def main_jeu(arm):
         perso,cam=verif_keys(perso,cam)
         cam=[-perso.px+tex/2,-perso.py+tey/2]
         if pygame.Rect(perso.px,perso.py,perso.tx,perso.ty).colliderect(pygame.Rect(cfin[0]*tc,cfin[1]*tc,tc,tc)):
-            enemis,mape,perso,cfin,cam,mis,gagne,trs=deb_level(niv,arm)
             points+=100
             ecran_gagne(niv,points)
+            ecran_chargement()
+            enemis,mape,perso,cfin,cam,mis,gagne,trs=deb_level(niv,arm)
             niv+=1
         if perso.vie<=0:
             encour=False
             ecran_perdu(niv,points)
+            ecran_chargement()
         for event in pygame.event.get():
             if event.type==QUIT: exit()
             elif event.type==KEYDOWN:
@@ -641,6 +648,7 @@ def main():
                     if b.collidepoint(pos): men=bts.index(b)
                 if men==0:
                     try:
+                        men=None
                         main_jeu(arm)
                     except Exception as error:
                         print("error : ",error)
