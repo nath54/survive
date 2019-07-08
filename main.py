@@ -4,7 +4,9 @@ from pygame.locals import *
 
 pygame.init()
 tex,tey=1000,800
-fenetre=pygame.display.set_mode([tex,tey])
+fenetre=pygame.display.set_mode([tex,tey],pygame.FULLSCREEN,pygame.HWSURFACE)
+iconimage=pygame.image.load(dim+"icon.png"))
+pygame.display.set_icon(iconimage)
 pygame.display.set_caption("MAD")
 font=pygame.font.SysFont("Arial",25)
 font2=pygame.font.SysFont("Arial",17)
@@ -559,7 +561,7 @@ def aff_menu(men,btsel,arm):
     pygame.display.update()
     return bst
 
-def main_menu():
+def main():
     btsel=0
     men=None
     bts=[pygame.Rect(50,50,200,100),pygame.Rect(50,200,200,100),pygame.Rect(50,350,200,100),pygame.Rect(50,500,200,100),pygame.Rect(50,650,200,100)]
@@ -599,15 +601,8 @@ def main_menu():
 
 
 
-main_menu()
 
 
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    main()
 
