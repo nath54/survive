@@ -1,4 +1,5 @@
 #coding:utf-8
+#!/bin/python3
 import random,pygame,math,numpy,time,sys
 from pygame.locals import *
 dim="images/"
