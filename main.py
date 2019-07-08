@@ -47,13 +47,15 @@ tc=rx(100)
 debug=False
 
 armes=[]
-armes.append( ["pistolet",10,0.5,2.1,6,50,3,(20,20,20),3,(250,0,0),"perso1.png",38,52] )
-armes.append( ["mitraillette",2,0.01,2.5,100,500,1,(20,20,20),1,(255,0,0),"perso.png",29,50] )
+armes.append( ["pistolet",10,0.5,2.1,6,50,3,(20,20,20),3,(250,0,0),"perso1.png",rx(38),ry(52)] )
+armes.append( ["mitraillette",2,0.01,2.5,100,500,1,(20,20,20),1,(255,0,0),"perso.png",rx(29),ry(50)] )
 #0=nom 1=degats 2=vitesse attaque 3=vitesse rechargement 4=taille chargeur 5=nombre munition niv 1 6=taille missile 7=couleur missile
 #8=taille explosion 9=couleur explosion 10=image 11=tx 12=ty
  
-enms=[["zombie",50,50,50,[0,50],3,1.,750,60,"en1.png",1]]
+enms=[["zombie",50,rx(50),ry(50),[0,50],3,1.,750,60,"en1.png",1]]
 #0=nom 1=vie 2=tx 3=ty 4=att 5=vit max 6=acc 7=dist reperage 8=portee 9=img
+
+imgtrs=[pygame.image.load(dim+"tr1.png"),pygame.image.load(dim+"tr2.png"),pygame.image.load(dim+"tr3.png"),pygame.image.load(dim+"tr4.png")]
 
 emape=[]
 emape.append( ["sol1","sol1.png",True,True] )      #0
@@ -80,7 +82,7 @@ class Missil:
     def __init__(self,x,y,t,cl,dg,vitx,vity,pos,texpl,clexpl):
         self.px=x
         self.py=y
-        self.t=t
+        self.t=rx(t)
         self.cl=cl
         self.dg=dg
         self.vitx=vitx
@@ -164,7 +166,7 @@ class Perso:
         self.energy_tot=5000
         self.energy=self.energy_tot
         self.issprint=False
-    def update(self,cam,mape,mis):  
+    def update(self,cam,mape,mis,trs,points):  
         if time.time()-self.dbg>=self.tbg:
             pos=pygame.mouse.get_pos()
             x1,y1=cam[0]+self.px,cam[1]+self.py
@@ -219,6 +221,11 @@ class Perso:
                                 self.py-=vity
                             #self.vitx,self.vity=0,0
             if debug: pygame.display.update()
+            srect=pygame.draw.rect(fenetre,(50,50,0),(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty),2)
+            for t in trs:
+                if not t.pris and srect.colliderect(pygame.Rect(cam[0]+t.px,cam[1]+t.py,t.tx,t.ty)):
+                    t.pris=True
+                    points+=30
             if self.px<0: self.px,self.vitx,self.vity=1,0,0
             if self.px+self.tx>mape.shape[0]*tc: self.px,self.vitx,self.vity=mape.shape[0]*tc-self.tx-1,0,0
             if self.py<0: self.py,self.vitx,self.vity=1,0,0
@@ -246,7 +253,7 @@ class Perso:
                     vitx=-math.cos(math.radians(self.agl-270))*50
                     vity=-math.sin(math.radians(self.agl-270))*50
                 mis.append( Missil(self.px+self.tx/2.,self.py+self.ty/2.,self.tmis,self.clmis,self.dg,vitx,vity,self,self.texpl,self.clexpl) )
-        return cam,mis
+        return cam,mis,trs,points
 
 class Enemi:
     def __init__(self,x,y,tp):
@@ -348,7 +355,14 @@ class Enemi:
             if self.vity>0 and self.vity < 2: self.vity=0
         return mis
         
-
+class Tresor:
+    def __init__(self,x,y):
+        self.px=x
+        self.py=y
+        self.tx=rx(40)
+        self.ty=ry(40)
+        self.img=pygame.transform.scale( random.choice(imgtrs) , [self.tx,self.ty])
+        self.pris=False
 
 
 
@@ -377,8 +391,8 @@ def create_mape(niv,arm):
         if deb[1]>tmy-1: deb[1]=tmy-1
     mape[deb[0],deb[1]]=ifin
     perso=Perso(niv,arm)
-    perso.px=dex*tc+tc/10
-    perso.py=dey*tc+tc/10
+    perso.px=dex*tc+rx(20)
+    perso.py=dey*tc+ry(20)
     return mape,perso,[deb[0],deb[1]],mps
         
 def deb_level(niv,arm):
@@ -392,9 +406,13 @@ def deb_level(niv,arm):
         while ne > len(enms)-1: ne-=1
     for x in range(nbenms):
         mm=random.choice( mps[int(len(mps)*10/100):] )
-        enemis.append( Enemi(mm[0]*tc+20,mm[1]*tc+20,ne) )
+        enemis.append( Enemi(mm[0]*tc+rx(20),mm[1]*tc+ry(20),ne) )
     gagne=False
-    return enemis,mape,perso,cfin,cam,mis,gagne
+    trs=[]
+    for x in range(3):
+        mm=random.choice( mps[int(len(mps)*10/100):] )
+        trs.append( Tresor(mm[0]*tc+rx(20),mm[1]*tc+ry(20)) )
+    return enemis,mape,perso,cfin,cam,mis,gagne,trs
 
 def ecran_gagne(niv,points):
     fenetre.fill((75,90,20))
@@ -421,18 +439,21 @@ def ecran_perdu(niv,points):
             elif event.type==KEYDOWN and event.key in [K_SPACE,K_ESCAPE]: encor=False
 
 
-def aff_jeu(perso,enemis,cam,mape,mis,fps,points):
+def aff_jeu(perso,enemis,cam,mape,mis,fps,points,trs):
     fenetre.fill((0,0,0))
     for x in range(int((-cam[0])/tc),int((-cam[0]+tex)/tc+1)):
         for y in range(int((-cam[1])/tc),int((-cam[1]+tey)/tc+1)):
             if x>=0 and x < mape.shape[0] and y >= 0 and y < mape.shape[1]:
                 fenetre.blit(emape[mape[x,y]][1],[cam[0]+x*tc,cam[1]+y*tc])
     for e in enemis:
-        if True or e.px+cam[0]-e.tx > 0 and e.px+cam[0] < tex and e.py+cam[1]-e.ty > 0 and e.py+cam[1] < tey:
+        if e.px+cam[0]+e.tx > 0 and e.px+cam[0] < tex and e.py+cam[1]+e.ty > 0 and e.py+cam[1] < tey:
             fenetre.blit(e.img,[cam[0]+e.px,cam[1]+e.py])
             if e.vie>=0:
                 pygame.draw.rect(fenetre,(150,0,0),(cam[0]+e.px,cam[1]+e.py-15,int(float(e.vie)/float(e.vie_tot)*float(e.tx)),7),0)
                 pygame.draw.rect(fenetre,(0,0,0),(cam[0]+e.px,cam[1]+e.py-15,e.tx,7),1)
+    for t in trs:
+        if not t.pris and t.px+cam[0]+t.tx > 0 and t.px+cam[0] < tex and t.py+cam[1]+t.ty > 0 and t.py+cam[1] < tey:
+            fenetre.blit(t.img,[cam[0]+t.px,cam[1]+t.py])
     for m in mis:
         if m.px+cam[0]-m.t > 0 and m.px+cam[0] < tex and m.py+cam[1]-m.t > 0 and m.py+cam[1] < tey:
             pygame.draw.circle(fenetre,m.cl,(int(cam[0]+m.px),int(cam[1]+m.py)),m.t,0)
@@ -481,18 +502,18 @@ def verif_keys(perso,cam):
     
 def main_jeu(arm):
     niv=1
-    enemis,mape,perso,cfin,cam,mis,gagne=deb_level(niv,arm)
+    enemis,mape,perso,cfin,cam,mis,gagne,trs=deb_level(niv,arm)
     encour=True
     fps=0
     points=0
     while encour:
         t1=time.time()
-        aff_jeu(perso,enemis,cam,mape,mis,fps,points)
+        aff_jeu(perso,enemis,cam,mape,mis,fps,points,trs)
         for m in mis:
             m.update(perso,enemis,mape,cam)
             if m.delet:
                 if m in mis: del(mis[mis.index(m)])
-        cam,mis=perso.update(cam,mape,mis)
+        cam,mis,trs,points=perso.update(cam,mape,mis,trs,points)
         for e in enemis:
             mis=e.update(mape,perso,mis,cam)
             if e.vie<=0:
@@ -501,7 +522,7 @@ def main_jeu(arm):
         perso,cam=verif_keys(perso,cam)
         cam=[-perso.px+tex/2,-perso.py+tey/2]
         if pygame.Rect(perso.px,perso.py,perso.tx,perso.ty).colliderect(pygame.Rect(cfin[0]*tc,cfin[1]*tc,tc,tc)):
-            enemis,mape,perso,cfin,cam,mis,gagne=deb_level(niv,arm)
+            enemis,mape,perso,cfin,cam,mis,gagne,trs=deb_level(niv,arm)
             points+=100
             ecran_gagne(niv,points)
             niv+=1
@@ -581,7 +602,7 @@ def aff_menu(men,btsel,arm):
         else: ib=imb1
         bst[1]=fenetre.blit( ib , [rx(740),ry(120)] )
         fenetre.blit( font.render("mitraillette",20,(100,150,35)) , [rx(770),ry(140)] )
-        fenetre.blit( pygame.transform.scale(pygame.image.load(dim+armes[arm][10]),[rx(armes[arm][11]*4),ry(armes[arm][12]*4)]) , [rx(400),ry(400)] )
+        fenetre.blit( pygame.transform.scale(pygame.image.load(dim+armes[arm][10]),[armes[arm][11]*4,armes[arm][12]*4]) , [rx(400),ry(400)] )
     pygame.display.update()
     return bst
 
