@@ -47,10 +47,11 @@ tc=rx(100)
 debug=False
 
 armes=[]
-armes.append( ["pistolet",10,0.5,2.1,6,50,3,(20,20,20),3,(250,0,0),"perso1.png",rx(38),ry(52)] )
-armes.append( ["mitraillette",2,0.01,2.5,100,500,1,(20,20,20),1,(255,0,0),"perso.png",rx(29),ry(50)] )
+armes.append( ["pistolet",10,0.5,2.1,6,50,3,(20,20,20),3,(250,0,0),"perso1.png",rx(38),ry(52),0,0] )
+armes.append( ["mitraillette",2,0.01,2.5,100,500,1,(20,20,20),1,(255,0,0),"perso.png",rx(29),ry(50),0,0] )
+armes.append( ["couteau",40,0.8,0,0,0,0,0,0,0,"perso3.png",rx(42),ry(59),1,60] )
 #0=nom 1=degats 2=vitesse attaque 3=vitesse rechargement 4=taille chargeur 5=nombre munition niv 1 6=taille missile 7=couleur missile
-#8=taille explosion 9=couleur explosion 10=image 11=tx 12=ty
+#8=taille explosion 9=couleur explosion 10=image 11=tx 12=ty 13=type arme(0=distance 1=melee) 14=portee ( si type == 1 ) , sinon mettre 0
  
 enms=[["zombie",50,rx(50),ry(50),[0,50],3,1.,750,60,"en1.png",1]]
 #0=nom 1=vie 2=tx 3=ty 4=att 5=vit max 6=acc 7=dist reperage 8=portee 9=img
@@ -166,7 +167,9 @@ class Perso:
         self.energy_tot=5000
         self.energy=self.energy_tot
         self.issprint=False
-    def update(self,cam,mape,mis,trs,points):  
+        self.tparme=arme[13]
+        self.portee=arme[14]
+    def update(self,cam,mape,mis,trs,points,enemis):  
         if time.time()-self.dbg>=self.tbg:
             pos=pygame.mouse.get_pos()
             x1,y1=cam[0]+self.px,cam[1]+self.py
@@ -235,25 +238,30 @@ class Perso:
             if self.vity < 0: self.vity+=0.5
             if self.vity > 0: self.vity-=0.5
         if self.istirer:
-            if time.time()-self.dchrg>=self.tchrg and time.time()-self.dat >= self.tat and self.nbcharg>0:
-                self.nbcharg-=1
-                self.dat=time.time()
-                pos=pygame.mouse.get_pos()
-                vitx,vity=50,0
-                if self.agl <= 90 and self.agl > 0:
-                    vitx=math.sin(math.radians(self.agl))*50
-                    vity=-math.cos(math.radians(self.agl))*50
-                elif self.agl <= 180 and self.agl > 90:
-                    vitx=math.cos(math.radians(self.agl-90))*50
-                    vity=math.sin(math.radians(self.agl-90))*50
-                elif self.agl <= 270 and self.agl > 180:
-                    vitx=-math.sin(math.radians(self.agl-180))*50
-                    vity=math.cos(math.radians(self.agl-180))*50
-                elif self.agl <= 360 and self.agl > 270:
-                    vitx=-math.cos(math.radians(self.agl-270))*50
-                    vity=-math.sin(math.radians(self.agl-270))*50
-                mis.append( Missil(self.px+self.tx/2.,self.py+self.ty/2.,self.tmis,self.clmis,self.dg,vitx,vity,self,self.texpl,self.clexpl) )
-        return cam,mis,trs,points
+            if time.time()-self.dat >= self.tat:
+                if self.tparme==0 and time.time()-self.dchrg>=self.tchrg and self.nbcharg>0:
+                    self.nbcharg-=1
+                    self.dat=time.time()
+                    pos=pygame.mouse.get_pos()
+                    vitx,vity=50,0
+                    if self.agl <= 90 and self.agl > 0:
+                        vitx=math.sin(math.radians(self.agl))*50
+                        vity=-math.cos(math.radians(self.agl))*50
+                    elif self.agl <= 180 and self.agl > 90:
+                        vitx=math.cos(math.radians(self.agl-90))*50
+                        vity=math.sin(math.radians(self.agl-90))*50
+                    elif self.agl <= 270 and self.agl > 180:
+                        vitx=-math.sin(math.radians(self.agl-180))*50
+                        vity=math.cos(math.radians(self.agl-180))*50
+                    elif self.agl <= 360 and self.agl > 270:
+                        vitx=-math.cos(math.radians(self.agl-270))*50
+                        vity=-math.sin(math.radians(self.agl-270))*50
+                    mis.append( Missil(self.px+self.tx/2.,self.py+self.ty/2.,self.tmis,self.clmis,self.dg,vitx,vity,self,self.texpl,self.clexpl) )
+                elif self.tparme==1:
+                    for e in enemis:
+                        if dist([self.px,self.py],[e.px,e.py]) <= self.portee:
+                            e.vie-=self.dg
+        return cam,mis,trs,points,enemis
 
 class Enemi:
     def __init__(self,x,y,tp):
@@ -513,7 +521,7 @@ def main_jeu(arm):
             m.update(perso,enemis,mape,cam)
             if m.delet:
                 if m in mis: del(mis[mis.index(m)])
-        cam,mis,trs,points=perso.update(cam,mape,mis,trs,points)
+        cam,mis,trs,points,enemis=perso.update(cam,mape,mis,trs,points,enemis)
         for e in enemis:
             mis=e.update(mape,perso,mis,cam)
             if e.vie<=0:
@@ -602,6 +610,10 @@ def aff_menu(men,btsel,arm):
         else: ib=imb1
         bst[1]=fenetre.blit( ib , [rx(740),ry(120)] )
         fenetre.blit( font.render("mitraillette",20,(100,150,35)) , [rx(770),ry(140)] )
+        if arm==2: ib=imb3
+        else: ib=imb1
+        bst[2]=fenetre.blit( ib , [rx(740),ry(230)] )
+        fenetre.blit( font.render("couteau",20,(100,150,35)) , [rx(770),ry(250)] )
         fenetre.blit( pygame.transform.scale(pygame.image.load(dim+armes[arm][10]),[armes[arm][11]*4,armes[arm][12]*4]) , [rx(400),ry(400)] )
     pygame.display.update()
     return bst
@@ -637,6 +649,7 @@ def main():
                         i=bst.index(bb)
                         if i==0: arm=0
                         elif i==1: arm=1
+                        elif i==2: arm=2
                 
                 
 
@@ -646,4 +659,5 @@ def main():
 
 
 main()
+
 
