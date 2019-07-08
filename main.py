@@ -37,8 +37,9 @@ strings=(
     "      X.X       ",
     "       X        ")
 
+
 cursor,mask=pygame.cursors.compile(strings, black='X', white='.', xor='o')
-cursor_sizer=((16,16),(8,8),cursor,mask)
+cursor_sizer=((16,16),(9,8),cursor,mask)
 
 pygame.mouse.set_cursor(*cursor_sizer)
 
@@ -60,20 +61,20 @@ enms=[["zombie",50,rx(50),ry(50),[0,50],3,1.,750,60,"en1.png",1]]
 imgtrs=[pygame.image.load(dim+"tr1.png"),pygame.image.load(dim+"tr2.png"),pygame.image.load(dim+"tr3.png"),pygame.image.load(dim+"tr4.png")]
 
 emape=[]
-emape.append( ["sol1","sol1.png",True,True] )      #0
-emape.append( ["sol2","sol2.png",True,True] )      #1
+emape.append( ["sol1","sol1.png",True,True,0.4] )      #0
+emape.append( ["sol2","sol2.png",True,True,0.4] )      #1
 emape.append( ["mur1","mur1.png",False,False] )    #2
 emape.append( ["fin1","fin1.png",True,True] )      #3
-emape.append( ["sol3","sol3.png",True,True] )      #4
-emape.append( ["sol4","sol4.png",True,True] )      #5
-emape.append( ["sol5","sol5.png",True,True] )      #6
+emape.append( ["sol3","sol3.png",True,True,0.4] )      #4
+emape.append( ["sol4","sol4.png",True,True,0.3] )      #5
+emape.append( ["sol5","sol5.png",True,True,0.4] )      #6
 emape.append( ["mur2","mur2.png",False,False] )    #7
 emape.append( ["eau1","eau1.png",False,True] )     #8
 emape.append( ["eau2","eau2.png",False,True] )     #9
 
 for em in emape:
     em[1]=pygame.transform.scale(pygame.image.load(dim+em[1]),[tc,tc])
-#0=nom , 1=img , 2=pmd , 3=mpad
+#0=nom , 1=img , 2=pmd , 3=mpad , 4=glisse
 
 emaps=[ [0,2],[1,2],[4,2],[5,2],[6,2] ]
 fins=[3]
@@ -101,7 +102,7 @@ class Missil:
             if not self.delet:
                 self.px+=self.vitx
                 self.py+=self.vity
-                srect=pygame.Rect(self.px-self.t/2,self.py-self.t/2,self.t,self.t)
+                self.rect=pygame.Rect(self.px-self.t/2,self.py-self.t/2,self.t,self.t)
                 if self.px <= 0: self.delet=True
                 if self.py <= 0: self.delet=True
                 if self.px >= mape.shape[0]*tc: self.delet=True
@@ -109,32 +110,34 @@ class Missil:
                 if not self.delet:
                     for o in [perso]+enemis:
                         if self.pos!=o:
-                            if srect.colliderect(pygame.Rect(o.px,o.py,o.tx,o.ty)):
+                            if self.rect.colliderect(pygame.Rect(o.px,o.py,o.tx,o.ty)):
                                 o.vie-=self.dg
                                 self.delet=True
                                 cr=pygame.draw.circle(fenetre,self.clexpl,(int(cam[0]+self.px),int(cam[1]+self.py)),self.texpl,0)
                                 pygame.display.update()
                                 #if self.texpl>10: time.sleep(0.1)
-                                for oo in [perso]+enemis:
-                                    if oo!=o and cr.colliderect(pygame.Rect(cam[0]+oo.px,cam[1]+oo.py,oo.tx,oo.ty)):
-                                        oo.vie-=self.dg
+                                if self.texpl>5:
+                                    for oo in [perso]+enemis:
+                                        if oo!=o and cr.colliderect(pygame.Rect(cam[0]+oo.px,cam[1]+oo.py,oo.tx,oo.ty)):
+                                            oo.vie-=self.dg
                                 break
                 if not self.delet:
                     for x in range(int(self.px/tc-2),int(self.px/tc+2)):
                         for y in range(int(self.py/tc-2),int(self.py/tc+2)):
                             if x >= 0 and y >= 0 and x < mape.shape[0] and y < mape.shape[1]:
                                 em=emape[mape[x,y]]
-                                if not self.delet and not em[3] and srect.colliderect(x*tc,y*tc,tc,tc):
+                                if not self.delet and not em[3] and self.rect.colliderect(x*tc,y*tc,tc,tc):
                                     self.delet=True
-                                    cr=pygame.draw.circle(fenetre,self.clexpl,(int(cam[0]+self.px),int(cam[1]+self.py)),self.texpl,0)
-                                    pygame.display.update()
-                                    for oo in [perso]+enemis:
-                                        if cr.colliderect(pygame.Rect(cam[0]+oo.px,cam[1]+oo.py,oo.tx,oo.ty)):
-                                            oo.vie-=self.dg
+                                    if self.texpl>5:
+                                        cr=pygame.draw.circle(fenetre,self.clexpl,(int(cam[0]+self.px),int(cam[1]+self.py)),self.texpl,0)
+                                        pygame.display.update()
+                                        for oo in [perso]+enemis:
+                                            if cr.colliderect(pygame.Rect(cam[0]+oo.px,cam[1]+oo.py,oo.tx,oo.ty)):
+                                                oo.vie-=self.dg
                                     break
 
 class Perso:
-    def __init__(self,niv,arm):
+    def __init__(self,niv,arm,glisse):
         arme=armes[arm]
         self.px=500
         self.py=400
@@ -142,8 +145,11 @@ class Perso:
         self.ty=arme[12]
         self.vie_tot=1000
         self.vie=self.vie_tot
-        self.img_base=pygame.transform.scale(pygame.image.load(dim+arme[10]),[self.tx,self.ty])
-        self.img=pygame.transform.scale(pygame.image.load(dim+"perso.png"),[self.tx,self.ty])
+        self.imgs=[pygame.transform.scale(pygame.image.load(dim+arme[10]),[self.tx,self.ty])]
+        self.imgs_tir=[]
+        self.anim=self.imgs
+        self.an=0
+        self.img=self.anim[0]
         self.agl=0
         self.vit_max=5.5
         self.vitx=0.
@@ -170,6 +176,10 @@ class Perso:
         self.issprint=False
         self.tparme=arme[13]
         self.portee=arme[14]
+        self.dan=time.time()
+        self.tan=0.1
+        self.rect=pygame.Rect(self.px,self.py,self.tx,self.ty)
+        self.re=glisse
     def update(self,cam,mape,mis,trs,points,enemis):  
         if time.time()-self.dbg>=self.tbg:
             pos=pygame.mouse.get_pos()
@@ -193,7 +203,15 @@ class Perso:
                 opp=y1-y2
                 alpha=math.degrees( math.atan(opp/adj) )+270
             self.agl=alpha
-            self.img=pygame.transform.rotate(self.img_base,-self.agl)
+            if time.time()-self.dan>=self.tan:
+                self.dan=time.time()
+                if self.anim==self.imgs_tir: self.an+=1
+                else:
+                    if (self.vitx+self.vity)/2 > 1.5: self.an+=1
+                if self.an>=len(self.anim):
+                    self.an=0
+                    if self.anim==self.imgs_tir: self.anim=self.imgs
+            self.img=pygame.transform.rotate(self.anim[self.an],-self.agl)
             self.dbg=time.time()
             self.px+=self.vitx
             self.py+=self.vity
@@ -204,40 +222,42 @@ class Perso:
             elif not self.issprint and self.energy<self.energy_tot:
                 self.energy+=1
             bc=True
-            srect=pygame.draw.rect(fenetre,(50,50,0),(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty),2)
             srhaut=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty*15/100)
             srbas=pygame.Rect(cam[0]+self.px,cam[1]+self.py+self.ty*75/100,self.tx,self.ty*15/100)
             srgauche=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx*15/100,self.ty)
-            srdroit=pygame.Rect(cam[0]+self.px*75/100,cam[1]+self.py,self.tx*15/100,self.ty)
+            srdroit=pygame.Rect(cam[0]+self.px+self.tx*75/100,cam[1]+self.py,self.tx*15/100,self.ty)
             vitx,vity=self.vitx,self.vity
             if self.issprint: vitx,vity=self.vitx*2,self.vity*2
             for x in range(int((self.px)/tc-1),int((self.px)/tc+2)):
                 for y in range(int((self.py)/tc-1),int((self.py)/tc+2)):
                     if x>=0 and y>=0 and x < mape.shape[0] and y < mape.shape[1] and not emape[mape[x,y]][2]: 
                         mrect=pygame.draw.rect(fenetre,(0,0,0),(cam[0]+x*tc,cam[1]+y*tc,tc,tc),2)
-                        if srect.colliderect(mrect):
+                        if self.rect.colliderect(mrect):
                             if srhaut.colliderect(mrect): self.py+=abs(vity)+1
                             elif srbas.colliderect(mrect): self.py-=abs(vity)+1
                             if srgauche.colliderect(mrect): self.px+=abs(vitx)+1
                             elif srdroit.colliderect(mrect): self.px-=abs(vitx)+1
-                            else:
+                            if False:
                                 self.px-=vitx
                                 self.py-=vity
                             #self.vitx,self.vity=0,0
             if debug: pygame.display.update()
-            srect=pygame.draw.rect(fenetre,(50,50,0),(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty),2)
             for t in trs:
-                if not t.pris and srect.colliderect(pygame.Rect(cam[0]+t.px,cam[1]+t.py,t.tx,t.ty)):
+                if not t.pris and self.rect.colliderect(pygame.Rect(cam[0]+t.px,cam[1]+t.py,t.tx,t.ty)):
                     t.pris=True
                     points+=30
             if self.px<0: self.px,self.vitx,self.vity=1,0,0
             if self.px+self.tx>mape.shape[0]*tc: self.px,self.vitx,self.vity=mape.shape[0]*tc-self.tx-1,0,0
             if self.py<0: self.py,self.vitx,self.vity=1,0,0
             if self.py+self.ty>mape.shape[1]*tc: self.py,self.vitx,self.vity=mape.shape[1]*tc-self.ty-1,0,0
-            if self.vitx < 0: self.vitx+=0.5
-            if self.vitx > 0: self.vitx-=0.5
-            if self.vity < 0: self.vity+=0.5
-            if self.vity > 0: self.vity-=0.5
+            if self.vitx <= -self.re: self.vitx+=self.re
+            if self.vitx >= self.re: self.vitx-=self.re
+            if self.vity <= -self.re: self.vity+=self.re
+            if self.vity >= self.re: self.vity-=self.re
+            if self.vitx<0 and self.vitx > -self.re: self.vitx=0
+            if self.vitx>0 and self.vitx < self.re: self.vitx=0
+            if self.vity<0 and self.vity > -self.re: self.vity=0
+            if self.vity>0 and self.vity < self.re: self.vity=0
         if self.istirer:
             if time.time()-self.dat >= self.tat:
                 self.dat=time.time()
@@ -287,10 +307,10 @@ class Enemi:
         self.portee=etp[8]
         self.dat=time.time()
         self.tat=etp[10]
+        self.rect=pygame.Rect(self.px,self.py,self.tx,self.ty)
     def update(self,mape,perso,mis,cam):
         if time.time()-self.dbg>=self.tbg:
             self.dbg=time.time()
-            srect=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty)
             srhaut=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx,self.ty*15/100)
             srbas=pygame.Rect(cam[0]+self.px,cam[1]+self.py+self.ty*75/100,self.tx,self.ty*15/100)
             srgauche=pygame.Rect(cam[0]+self.px,cam[1]+self.py,self.tx*15/100,self.ty)
@@ -322,7 +342,7 @@ class Enemi:
                     alpha=-math.degrees( math.atan(opp/adj) )+180
                 self.agl=alpha-90
                 self.img=pygame.transform.rotate(self.img_base,self.agl)
-                if dis <= self.portee or srect.colliderect(pygame.Rect(cam[0]+perso.px,cam[1]+perso.py,perso.tx,perso.ty)):
+                if dis <= self.portee or self.rect.colliderect(pygame.Rect(cam[0]+perso.px,cam[1]+perso.py,perso.tx,perso.ty)):
                     if self.att[0]==0:
                         if time.time()-self.dat >= self.tat:
                             self.dat=time.time()
@@ -341,7 +361,7 @@ class Enemi:
                 for y in range(int((self.py)/tc-1),int((self.py)/tc+2)):
                     if x>=0 and y>=0 and x < mape.shape[0] and y < mape.shape[1] and not emape[mape[x,y]][2]: 
                         mrect=pygame.Rect(cam[0]+x*tc,cam[1]+y*tc,tc,tc)
-                        if srect.colliderect(mrect):
+                        if self.rect.colliderect(mrect):
                             if srhaut.colliderect(mrect): self.py+=abs(self.vity)+1
                             elif srbas.colliderect(mrect): self.py-=abs(self.vity)+1
                             if srgauche.colliderect(mrect): self.px+=abs(self.vitx)+1
@@ -365,12 +385,12 @@ class Enemi:
         return mis
         
 class Tresor:
-    def __init__(self,x,y):
+    def __init__(self,x,y,i):
         self.px=x
         self.py=y
         self.tx=rx(40)
         self.ty=ry(40)
-        self.img=pygame.transform.scale( random.choice(imgtrs) , [self.tx,self.ty])
+        self.img=pygame.transform.scale( imgtrs[i] , [self.tx,self.ty])
         self.pris=False
 
 
@@ -399,7 +419,7 @@ def create_mape(niv,arm):
         if deb[1]<0: deb[1]=0
         if deb[1]>tmy-1: deb[1]=tmy-1
     mape[deb[0],deb[1]]=ifin
-    perso=Perso(niv,arm)
+    perso=Perso(niv,arm,emape[isol][4])
     perso.px=dex*tc+rx(20)
     perso.py=dey*tc+ry(20)
     return mape,perso,[deb[0],deb[1]],mps
@@ -418,9 +438,12 @@ def deb_level(niv,arm):
         enemis.append( Enemi(mm[0]*tc+rx(20),mm[1]*tc+ry(20),ne) )
     gagne=False
     trs=[]
+    rr=[0,1,2,3]
     for x in range(3):
         mm=random.choice( mps[int(len(mps)*10/100):-1] )
-        trs.append( Tresor(mm[0]*tc+rx(20),mm[1]*tc+ry(20)) )
+        r=random.choice(rr)
+        if r in rr: del(rr[rr.index(r)])
+        trs.append( Tresor(mm[0]*tc+rx(20),mm[1]*tc+ry(20),r) )
     return enemis,mape,perso,cfin,cam,mis,gagne,trs
 
 def ecran_gagne(niv,points):
@@ -449,7 +472,7 @@ def ecran_perdu(niv,points):
 
 def ecran_chargement():
     fenetre.fill((75,90,20))
-    fenetre.blit(font.render("Chargement...",20,(255,255,255)),[rx(500),ry(400)])
+    fenetre.blit(font.render("Chargement...",20,(255,255,255)),[rx(400),ry(400)])
     pygame.display.update()
 
 def aff_jeu(perso,enemis,cam,mape,mis,fps,points,trs):
@@ -458,19 +481,21 @@ def aff_jeu(perso,enemis,cam,mape,mis,fps,points,trs):
         for y in range(int((-cam[1])/tc),int((-cam[1]+tey)/tc+1)):
             if x>=0 and x < mape.shape[0] and y >= 0 and y < mape.shape[1]:
                 fenetre.blit(emape[mape[x,y]][1],[cam[0]+x*tc,cam[1]+y*tc])
+            
     for e in enemis:
         if e.px+cam[0]+e.tx > 0 and e.px+cam[0] < tex and e.py+cam[1]+e.ty > 0 and e.py+cam[1] < tey:
-            fenetre.blit(e.img,[cam[0]+e.px,cam[1]+e.py])
+            e.rect=fenetre.blit(e.img,[cam[0]+e.px,cam[1]+e.py])
             if e.vie>=0:
                 pygame.draw.rect(fenetre,(150,0,0),(cam[0]+e.px,cam[1]+e.py-15,int(float(e.vie)/float(e.vie_tot)*float(e.tx)),7),0)
                 pygame.draw.rect(fenetre,(0,0,0),(cam[0]+e.px,cam[1]+e.py-15,e.tx,7),1)
+        else: e.rect=pygame.Rect(cam[0]+e.px,cam[1]+e.py,e.tx,e.ty)
     for t in trs:
         if not t.pris and t.px+cam[0]+t.tx > 0 and t.px+cam[0] < tex and t.py+cam[1]+t.ty > 0 and t.py+cam[1] < tey:
             fenetre.blit(t.img,[cam[0]+t.px,cam[1]+t.py])
     for m in mis:
         if m.px+cam[0]-m.t > 0 and m.px+cam[0] < tex and m.py+cam[1]-m.t > 0 and m.py+cam[1] < tey:
             pygame.draw.circle(fenetre,m.cl,(int(cam[0]+m.px),int(cam[1]+m.py)),m.t,0)
-    fenetre.blit(perso.img,[cam[0]+perso.px,cam[1]+perso.py])
+    perso.rect=fenetre.blit(perso.img,[cam[0]+perso.px,cam[1]+perso.py])
     if debug : fenetre.blit(font2.render(str(perso.agl)+"°",20,(255,255,255)),[cam[0]+perso.px+50,cam[1]+perso.py-50])
     if perso.vie>=0:
         pygame.draw.rect(fenetre,(250,0,0),(rx(50),ry(50),int(float(perso.vie)/float(perso.vie_tot)*float(rx(200))),ry(25)),0)
@@ -647,10 +672,12 @@ def main():
                 for b in bts:
                     if b.collidepoint(pos): men=bts.index(b)
                 if men==0:
-                    try:
+                    #try:
+                    if True:
                         men=None
                         main_jeu(arm)
-                    except Exception as error:
+                    else:
+                    #except Exception as error:
                         print("error : ",error)
                 elif men==4: exit()
                 for bb in bst:
