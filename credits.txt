@@ -3,3 +3,4 @@ Thanks to all the creators who publish their creations on opengameart.org:
     -https://opengameart.org/content/2d-lost-garden-zelda-style-tiles-resized-to-32x32-with-additions
     -https://opengameart.org/content/animated-top-down-zombie
     -https://opengameart.org/content/texture-to-tile-project
+    -https://opengameart.org/content/very-basic-32x32-topdown-snow-tileset
