@@ -78,14 +78,18 @@ p22=["perso2-2-1.png","perso2-2-2.png","perso2-2-3.png"]
 p31=["perso3.png"]
 p32=["perso3-2-1.png","perso3-2-2.png","perso3-2-3.png","perso3-2-4.png","perso3-2-5.png","perso3-2-6.png","perso3-2-7.png","perso3-2-8.png","perso3-2-9.png","perso3-2-10.png","perso3-2-11.png","perso3-2-12.png","perso3-2-13.png","perso3-2-14.png"]
 armes.append( ["pistolet",10,0.5,2.1,10,60,3,(20,20,20),3,(250,0,0),p11,rx(38),ry(52),0,0,p12,rx(38),ry(52)] )
-armes.append( ["mitraillette",2,0.01,2.5,100,500,1,(20,20,20),1,(255,0,0),p21,rx(29),ry(50),0,0,p22,rx(29),ry(50)] )
-armes.append( ["couteau",40,0.4,0,0,0,0,0,0,0,p31,rx(219/4),ry(279/4),1,90,p32,rx(300/4),ry(329/4)] )
+armes.append( ["mitraillette",2,0.01,2.5,100,500,1,(20,20,20),1,(255,0,0),p21,rx(29),ry(50),0,0,p22,rx(206/5),ry(312/5)] )
+armes.append( ["couteau",40,0.4,0,0,0,0,0,0,0,p31,rx(219/4),ry(279/4),1,90,p32,rx(300/3.5),ry(329/3.5)] )
 #0=nom 1=degats 2=vitesse attaque 3=vitesse rechargement 4=taille chargeur 5=nombre munition niv 1 6=taille missile 7=couleur missile
 #8=taille explosion 9=couleur explosion 10=images 11=tx 12=ty 13=type arme(0=distance 1=melee) 14=portee ( si type == 1 ) , sinon mettre 0 15=images tir
+#16=tx tir , 17=ty tir
+
 #
  
-enms=[["zombie",50,rx(50),ry(50),[0,50],3,1.,750,60,"en1.png",1]]
-#0=nom 1=vie 2=tx 3=ty 4=att 5=vit max 6=acc 7=dist reperage 8=portee 9=img
+enms=[]
+enms.append( ["zombie",50,rx(50),ry(50),[0,50],3,1.,750,60,"en1.png",1] )
+enms.append( ["zombie2",60,rx(50),ry(50),[0,60],4.5,1.5,500,60,"en1.png",1] )
+#0=nom 1=vie 2=tx 3=ty 4=att 5=vit max 6=acc 7=dist reperage 8=portee 9=img 10=?
 
 imgtrs=[pygame.image.load(dim+"tr1.png"),pygame.image.load(dim+"tr2.png"),pygame.image.load(dim+"tr3.png"),pygame.image.load(dim+"tr4.png")]
 
@@ -174,6 +178,8 @@ class Perso:
         self.py=400
         self.tx=arme[11]
         self.ty=arme[12]
+        self.txtir=arme[16]
+        self.tytir=arme[17]
         self.vie_tot=1000
         self.vie=self.vie_tot
         self.imgs=[]
@@ -181,7 +187,7 @@ class Perso:
             self.imgs.append( pygame.transform.scale( pygame.image.load(dim+ii), [self.tx,self.ty] ) )
         self.imgs_tir=[]
         for ii in arme[15]:
-            self.imgs_tir.append( pygame.transform.scale( pygame.image.load(dim+ii), [self.tx,self.ty] ) )
+            self.imgs_tir.append( pygame.transform.scale( pygame.image.load(dim+ii), [self.txtir,self.tytir] ) )
         self.anim=self.imgs
         self.an=0
         self.img=self.anim[0]
